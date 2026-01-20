@@ -98,9 +98,26 @@ const cities = [
   { name: "三亚", lat: 18.2528, lon: 109.5119 }
 ];
 
+// ===== 洗牌函数（关键）=====
+function shuffle(array) {
+  const arr = array.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+let shuffledCities = shuffle(cities);
 let cityIndex = 0;
+
 function loadWeather() {
-  const c = cities[cityIndex];
+  if (cityIndex >= shuffledCities.length) {
+    shuffledCities = shuffle(cities); // 一轮结束，重新洗牌
+    cityIndex = 0;
+  }
+
+  const c = shuffledCities[cityIndex];
   document.getElementById("city").innerText = c.name;
 
   fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current_weather=true`)
@@ -113,12 +130,13 @@ function loadWeather() {
       document.getElementById("temp").innerText = "--℃";
     });
 
-  cityIndex = (cityIndex + 1) % cities.length;
+  cityIndex++;
 }
+
 loadWeather();
 setInterval(loadWeather, 8000);
 
-// ================= 30天内节假日自动轮播 =================
+// ================= 30天内节假日轮播 =================
 const holidays = [
   { name: "春节", date: "2026-02-17" },
   { name: "情人节", date: "2026-02-14" },
