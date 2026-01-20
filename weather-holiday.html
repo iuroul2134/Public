@@ -22,7 +22,7 @@ body {
   text-align: center;
 }
 
-/* 黑字 + 白描边 */
+/* 黑字 + 白描边（直播抗背景） */
 .stroke {
   color: #000;
   text-shadow:
@@ -72,16 +72,43 @@ body {
 </div>
 
 <script>
-// ================= 天气（省会轮播） =================
+// ================= 城市列表（1 + 2 线） =================
 const cities = [
   { name: "北京", lat: 39.9042, lon: 116.4074 },
   { name: "上海", lat: 31.2304, lon: 121.4737 },
   { name: "广州", lat: 23.1291, lon: 113.2644 },
   { name: "深圳", lat: 22.5431, lon: 114.0579 },
+
   { name: "成都", lat: 30.5728, lon: 104.0668 },
   { name: "杭州", lat: 30.2741, lon: 120.1551 },
+  { name: "重庆", lat: 29.5630, lon: 106.5516 },
   { name: "武汉", lat: 30.5928, lon: 114.3055 },
-  { name: "西安", lat: 34.3416, lon: 108.9398 }
+  { name: "西安", lat: 34.3416, lon: 108.9398 },
+  { name: "南京", lat: 32.0603, lon: 118.7969 },
+  { name: "苏州", lat: 31.2989, lon: 120.5853 },
+  { name: "天津", lat: 39.0842, lon: 117.2000 },
+  { name: "郑州", lat: 34.7466, lon: 113.6254 },
+  { name: "长沙", lat: 28.2282, lon: 112.9388 },
+  { name: "青岛", lat: 36.0671, lon: 120.3826 },
+  { name: "宁波", lat: 29.8683, lon: 121.5440 },
+  { name: "佛山", lat: 23.0215, lon: 113.1214 },
+  { name: "东莞", lat: 23.0207, lon: 113.7518 },
+  { name: "合肥", lat: 31.8206, lon: 117.2272 },
+  { name: "厦门", lat: 24.4798, lon: 118.0894 },
+  { name: "福州", lat: 26.0745, lon: 119.2965 },
+  { name: "济南", lat: 36.6512, lon: 117.1201 },
+  { name: "昆明", lat: 25.0389, lon: 102.7183 },
+  { name: "南宁", lat: 22.8170, lon: 108.3669 },
+  { name: "南昌", lat: 28.6820, lon: 115.8579 },
+  { name: "贵阳", lat: 26.6470, lon: 106.6302 },
+  { name: "太原", lat: 37.8706, lon: 112.5489 },
+  { name: "石家庄", lat: 38.0428, lon: 114.5149 },
+  { name: "沈阳", lat: 41.8057, lon: 123.4315 },
+  { name: "大连", lat: 38.9140, lon: 121.6147 },
+  { name: "长春", lat: 43.8171, lon: 125.3235 },
+  { name: "哈尔滨", lat: 45.8038, lon: 126.5349 },
+  { name: "海口", lat: 20.0440, lon: 110.1999 },
+  { name: "三亚", lat: 18.2528, lon: 109.5119 }
 ];
 
 let cityIndex = 0;
@@ -91,10 +118,10 @@ function loadWeather() {
   document.getElementById("city").innerText = city.name;
 
   fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true`)
-    .then(res => res.json())
-    .then(data => {
+    .then(r => r.json())
+    .then(d => {
       document.getElementById("temp").innerText =
-        Math.round(data.current_weather.temperature) + "℃";
+        Math.round(d.current_weather.temperature) + "℃";
     })
     .catch(() => {
       document.getElementById("temp").innerText = "--℃";
@@ -104,9 +131,9 @@ function loadWeather() {
 }
 
 loadWeather();
-setInterval(loadWeather, 10000);
+setInterval(loadWeather, 8000);
 
-// ================= 节日倒计时（自动切换） =================
+// ================= 节日自动切换 =================
 const holidays = [
   { name: "春节", date: new Date("2026-02-17") },
   { name: "情人节", date: new Date("2026-02-14") },
@@ -115,29 +142,20 @@ const holidays = [
 
 function updateHoliday() {
   const now = new Date();
-
-  // 找到最近的未到节日
-  const upcoming = holidays
-    .map(h => ({
-      ...h,
-      diff: h.date - now
-    }))
+  const next = holidays
+    .map(h => ({ ...h, diff: h.date - now }))
     .filter(h => h.diff > 0)
     .sort((a, b) => a.diff - b.diff)[0];
 
-  if (!upcoming) {
-    document.getElementById("holidayName").innerText = "节日已过";
-    document.getElementById("holidayDays").innerText = "-- 天";
-    return;
-  }
+  if (!next) return;
 
-  const days = Math.ceil(upcoming.diff / (1000 * 60 * 60 * 24));
-  document.getElementById("holidayName").innerText = "距离 " + upcoming.name;
-  document.getElementById("holidayDays").innerText = days + " 天";
+  document.getElementById("holidayName").innerText = "距离 " + next.name;
+  document.getElementById("holidayDays").innerText =
+    Math.ceil(next.diff / 86400000) + " 天";
 }
 
 updateHoliday();
-setInterval(updateHoliday, 60 * 1000);
+setInterval(updateHoliday, 60000);
 </script>
 </body>
 </html>
