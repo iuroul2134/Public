@@ -1,154 +1,121 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>天气 + 节假日倒计时</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>天气 + 节日倒计时</title>
 
 <style>
-  body {
-    margin: 0;
-    background: transparent;
-    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-    color: #ffffff;
-  }
+body {
+  margin: 0;
+  background: transparent;
+  font-family: "微软雅黑", "PingFang SC", sans-serif;
+}
 
-  .card {
-    width: 360px;
-    height: 360px;
-    box-sizing: border-box;
-    padding: 16px;
-    background: transparent;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    text-align: center;
-  }
+.card {
+  width: 360px;
+  height: 360px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
 
-  .city {
-    font-size: 18px;
-    opacity: 0.9;
-  }
+/* 黑字 + 白描边 */
+.stroke {
+  color: #000;
+  text-shadow:
+    -1px -1px 0 #fff,
+     1px -1px 0 #fff,
+    -1px  1px 0 #fff,
+     1px  1px 0 #fff;
+}
 
-  .temp {
-    font-size: 46px;
-    font-weight: 600;
-    margin: 6px 0;
-  }
+.city {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
 
-  .desc {
-    font-size: 14px;
-    opacity: 0.85;
-  }
+.temp {
+  font-size: 48px;
+  font-weight: 600;
+}
 
-  .divider {
-    height: 1px;
-    background: rgba(255,255,255,0.25);
-    margin: 14px 0;
-  }
+.divider {
+  width: 80%;
+  height: 1px;
+  background: rgba(0,0,0,0.3);
+  margin: 12px 0;
+}
 
-  .holiday-name {
-    font-size: 18px;
-  }
+.holiday {
+  font-size: 16px;
+}
 
-  .countdown {
-    font-size: 32px;
-    font-weight: 600;
-    margin-top: 6px;
-  }
+.days {
+  font-size: 32px;
+  font-weight: 600;
+}
 </style>
 </head>
 
 <body>
 <div class="card">
-  <div class="weather">
-    <div class="city" id="city">加载中…</div>
-    <div class="temp" id="temp">--°C</div>
-    <div class="desc" id="desc">--</div>
-  </div>
+  <div id="city" class="city stroke">加载中…</div>
+  <div id="temp" class="temp stroke">--℃</div>
 
   <div class="divider"></div>
 
-  <div class="holiday">
-    <div class="holiday-name" id="holidayName"></div>
-    <div class="countdown" id="holidayCountdown"></div>
-  </div>
+  <div class="holiday stroke">距离 春节</div>
+  <div id="days" class="days stroke">-- 天</div>
 </div>
 
 <script>
-/* ================== 城市轮播（省会） ================== */
+// 全国省会（轮播）
 const cities = [
-  "北京","天津","上海","重庆",
-  "石家庄","太原","沈阳","长春","哈尔滨",
-  "南京","杭州","合肥","福州","南昌","济南",
-  "郑州","武汉","长沙","广州","海口",
-  "成都","贵阳","昆明",
-  "西安","兰州","西宁","银川","乌鲁木齐",
-  "南宁","拉萨","呼和浩特"
+  { name: "北京", lat: 39.9042, lon: 116.4074 },
+  { name: "上海", lat: 31.2304, lon: 121.4737 },
+  { name: "广州", lat: 23.1291, lon: 113.2644 },
+  { name: "深圳", lat: 22.5431, lon: 114.0579 },
+  { name: "成都", lat: 30.5728, lon: 104.0668 },
+  { name: "杭州", lat: 30.2741, lon: 120.1551 },
+  { name: "武汉", lat: 30.5928, lon: 114.3055 },
+  { name: "西安", lat: 34.3416, lon: 108.9398 }
 ];
 
-let cityIndex = 0;
+let index = 0;
 
-/* ================== 天气（JSONP 稳定版） ================== */
-function loadWeather(city) {
-  const old = document.getElementById("jsonp");
-  if (old) old.remove();
+function loadWeather() {
+  const city = cities[index];
+  document.getElementById("city").innerText = city.name;
 
-  const script = document.createElement("script");
-  script.id = "jsonp";
-  script.src =
-    "https://tianqiapi.com/api?version=v1"
-    + "&city=" + encodeURIComponent(city)
-    + "&callback=weatherCallback";
-  document.body.appendChild(script);
+  fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("temp").innerText =
+        Math.round(data.current_weather.temperature) + "℃";
+    })
+    .catch(() => {
+      document.getElementById("temp").innerText = "--℃";
+    });
+
+  index = (index + 1) % cities.length;
 }
 
-function weatherCallback(data) {
-  if (!data || !data.data || !data.data[0]) return;
+// 春节倒计时（2026-02-17）
+const springFestival = new Date("2026-02-17");
 
-  document.getElementById("city").innerText = "📍 " + data.city;
-  document.getElementById("temp").innerText = data.data[0].tem + "°C";
-  document.getElementById("desc").innerText = data.data[0].wea;
+function updateDays() {
+  const now = new Date();
+  const diff = springFestival - now;
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  document.getElementById("days").innerText = days + " 天";
 }
 
-/* 初始加载 */
-loadWeather(cities[cityIndex]);
-
-/* 每 5 秒切换一个城市 */
-setInterval(() => {
-  cityIndex = (cityIndex + 1) % cities.length;
-  loadWeather(cities[cityIndex]);
-}, 5000);
-
-/* ================== 节假日倒计时 ================== */
-const holidays = [
-  { name: "元旦", date: "2026-01-01" },
-  { name: "春节", date: "2026-02-17" },
-  { name: "清明节", date: "2026-04-05" },
-  { name: "劳动节", date: "2026-05-01" },
-  { name: "端午节", date: "2026-06-19" },
-  { name: "中秋节", date: "2026-09-25" },
-  { name: "国庆节", date: "2026-10-01" }
-];
-
-const now = new Date();
-let nextHoliday = null;
-
-for (let h of holidays) {
-  const d = new Date(h.date);
-  if (d > now) {
-    nextHoliday = { ...h, d };
-    break;
-  }
-}
-
-if (nextHoliday) {
-  const days = Math.ceil((nextHoliday.d - now) / 86400000);
-  document.getElementById("holidayName").innerText =
-    "🎉 距离 " + nextHoliday.name;
-  document.getElementById("holidayCountdown").innerText =
-    days + " 天";
-}
+loadWeather();
+updateDays();
+setInterval(loadWeather, 10000);
 </script>
 </body>
 </html>
