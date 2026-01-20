@@ -4,48 +4,53 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>天气 + 节假日倒计时</title>
+
 <style>
   body {
     margin: 0;
     background: transparent;
     font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #ffffff;
   }
+
   .card {
     width: 360px;
     height: 360px;
-    background: rgba(20, 20, 20, 0.75);
-    border-radius: 18px;
-    color: #fff;
-    padding: 18px;
+    padding: 16px;
     box-sizing: border-box;
-  }
-  .weather {
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     text-align: center;
   }
+
   .city {
     font-size: 18px;
     opacity: 0.9;
   }
+
   .temp {
-    font-size: 42px;
+    font-size: 44px;
     font-weight: 600;
     margin: 6px 0;
   }
+
   .desc {
     font-size: 14px;
     opacity: 0.85;
   }
+
   .divider {
     height: 1px;
-    background: rgba(255,255,255,0.15);
-    margin: 16px 0;
+    background: rgba(255,255,255,0.25);
+    margin: 14px 0;
   }
-  .holiday {
-    text-align: center;
-  }
+
   .holiday-name {
     font-size: 18px;
   }
+
   .countdown {
     font-size: 32px;
     font-weight: 600;
@@ -53,10 +58,11 @@
   }
 </style>
 </head>
+
 <body>
 <div class="card">
   <div class="weather">
-    <div class="city" id="city">定位中…</div>
+    <div class="city" id="city">加载中…</div>
     <div class="temp" id="temp">--°C</div>
     <div class="desc" id="desc">--</div>
   </div>
@@ -64,46 +70,73 @@
   <div class="divider"></div>
 
   <div class="holiday">
-    <div class="holiday-name" id="holidayName">节假日加载中</div>
-    <div class="countdown" id="holidayCountdown">-- 天</div>
+    <div class="holiday-name" id="holidayName"></div>
+    <div class="countdown" id="holidayCountdown"></div>
   </div>
 </div>
 
 <script>
-/* 天气（自动定位） */
-fetch("https://tianqiapi.com/api?version=v6")
-  .then(res => res.json())
-  .then(data => {
-    document.getElementById("city").innerText = "📍 " + data.city;
-    document.getElementById("temp").innerText = data.tem + "°C";
-    document.getElementById("desc").innerText = data.wea;
-  });
+/* ===== 省会城市列表（轮播） ===== */
+const cities = [
+  "北京","天津","上海","重庆",
+  "石家庄","太原","沈阳","长春","哈尔滨",
+  "南京","杭州","合肥","福州","南昌","济南",
+  "郑州","武汉","长沙","广州","海口",
+  "成都","贵阳","昆明",
+  "西安","兰州","西宁","银川","乌鲁木齐",
+  "南宁","拉萨","呼和浩特"
+];
 
-/* 节假日倒计时（示例：自动找最近一个） */
+let cityIndex = 0;
+
+/* ===== 获取天气 ===== */
+function loadWeather(city) {
+  fetch(`https://tianqiapi.com/api?version=v6&city=${city}`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("city").innerText = "📍 " + data.city;
+      document.getElementById("temp").innerText = data.tem + "°C";
+      document.getElementById("desc").innerText = data.wea;
+    });
+}
+
+/* 初始加载 */
+loadWeather(cities[cityIndex]);
+
+/* 每 5 秒切换一个省会 */
+setInterval(() => {
+  cityIndex = (cityIndex + 1) % cities.length;
+  loadWeather(cities[cityIndex]);
+}, 5000);
+
+/* ===== 节假日倒计时 ===== */
 const holidays = [
   { name: "元旦", date: "2026-01-01" },
   { name: "春节", date: "2026-02-17" },
   { name: "清明节", date: "2026-04-05" },
   { name: "劳动节", date: "2026-05-01" },
+  { name: "端午节", date: "2026-06-19" },
   { name: "中秋节", date: "2026-09-25" },
   { name: "国庆节", date: "2026-10-01" }
 ];
 
 const now = new Date();
-let next = null;
+let nextHoliday = null;
 
 for (let h of holidays) {
   const d = new Date(h.date);
   if (d > now) {
-    next = { ...h, d };
+    nextHoliday = { ...h, d };
     break;
   }
 }
 
-if (next) {
-  const days = Math.ceil((next.d - now) / 86400000);
-  document.getElementById("holidayName").innerText = "🎉 距离 " + next.name;
-  document.getElementById("holidayCountdown").innerText = days + " 天";
+if (nextHoliday) {
+  const days = Math.ceil((nextHoliday.d - now) / 86400000);
+  document.getElementById("holidayName").innerText =
+    "🎉 距离 " + nextHoliday.name;
+  document.getElementById("holidayCountdown").innerText =
+    days + " 天";
 }
 </script>
 </body>
