@@ -16,8 +16,8 @@
   .card {
     width: 360px;
     height: 360px;
-    padding: 16px;
     box-sizing: border-box;
+    padding: 16px;
     background: transparent;
     display: flex;
     flex-direction: column;
@@ -31,7 +31,7 @@
   }
 
   .temp {
-    font-size: 44px;
+    font-size: 46px;
     font-weight: 600;
     margin: 6px 0;
   }
@@ -76,7 +76,7 @@
 </div>
 
 <script>
-/* ===== 省会城市列表（轮播） ===== */
+/* ================== 城市轮播（省会） ================== */
 const cities = [
   "北京","天津","上海","重庆",
   "石家庄","太原","沈阳","长春","哈尔滨",
@@ -89,27 +89,38 @@ const cities = [
 
 let cityIndex = 0;
 
-/* ===== 获取天气 ===== */
+/* ================== 天气（JSONP 稳定版） ================== */
 function loadWeather(city) {
-  fetch(`https://tianqiapi.com/api?version=v6&city=${city}`)
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById("city").innerText = "📍 " + data.city;
-      document.getElementById("temp").innerText = data.tem + "°C";
-      document.getElementById("desc").innerText = data.wea;
-    });
+  const old = document.getElementById("jsonp");
+  if (old) old.remove();
+
+  const script = document.createElement("script");
+  script.id = "jsonp";
+  script.src =
+    "https://tianqiapi.com/api?version=v1"
+    + "&city=" + encodeURIComponent(city)
+    + "&callback=weatherCallback";
+  document.body.appendChild(script);
+}
+
+function weatherCallback(data) {
+  if (!data || !data.data || !data.data[0]) return;
+
+  document.getElementById("city").innerText = "📍 " + data.city;
+  document.getElementById("temp").innerText = data.data[0].tem + "°C";
+  document.getElementById("desc").innerText = data.data[0].wea;
 }
 
 /* 初始加载 */
 loadWeather(cities[cityIndex]);
 
-/* 每 5 秒切换一个省会 */
+/* 每 5 秒切换一个城市 */
 setInterval(() => {
   cityIndex = (cityIndex + 1) % cities.length;
   loadWeather(cities[cityIndex]);
 }, 5000);
 
-/* ===== 节假日倒计时 ===== */
+/* ================== 节假日倒计时 ================== */
 const holidays = [
   { name: "元旦", date: "2026-01-01" },
   { name: "春节", date: "2026-02-17" },
