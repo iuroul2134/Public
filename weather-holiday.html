@@ -67,12 +67,12 @@ body {
 
   <div class="divider"></div>
 
-  <div class="holiday stroke">距离 春节</div>
-  <div id="days" class="days stroke">-- 天</div>
+  <div id="holidayName" class="holiday stroke">距离 节日</div>
+  <div id="holidayDays" class="days stroke">-- 天</div>
 </div>
 
 <script>
-// 全国省会（轮播）
+// ================= 天气（省会轮播） =================
 const cities = [
   { name: "北京", lat: 39.9042, lon: 116.4074 },
   { name: "上海", lat: 31.2304, lon: 121.4737 },
@@ -84,10 +84,10 @@ const cities = [
   { name: "西安", lat: 34.3416, lon: 108.9398 }
 ];
 
-let index = 0;
+let cityIndex = 0;
 
 function loadWeather() {
-  const city = cities[index];
+  const city = cities[cityIndex];
   document.getElementById("city").innerText = city.name;
 
   fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true`)
@@ -100,22 +100,44 @@ function loadWeather() {
       document.getElementById("temp").innerText = "--℃";
     });
 
-  index = (index + 1) % cities.length;
-}
-
-// 春节倒计时（2026-02-17）
-const springFestival = new Date("2026-02-17");
-
-function updateDays() {
-  const now = new Date();
-  const diff = springFestival - now;
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-  document.getElementById("days").innerText = days + " 天";
+  cityIndex = (cityIndex + 1) % cities.length;
 }
 
 loadWeather();
-updateDays();
 setInterval(loadWeather, 10000);
+
+// ================= 节日倒计时（自动切换） =================
+const holidays = [
+  { name: "春节", date: new Date("2026-02-17") },
+  { name: "情人节", date: new Date("2026-02-14") },
+  { name: "元宵节", date: new Date("2026-03-03") }
+];
+
+function updateHoliday() {
+  const now = new Date();
+
+  // 找到最近的未到节日
+  const upcoming = holidays
+    .map(h => ({
+      ...h,
+      diff: h.date - now
+    }))
+    .filter(h => h.diff > 0)
+    .sort((a, b) => a.diff - b.diff)[0];
+
+  if (!upcoming) {
+    document.getElementById("holidayName").innerText = "节日已过";
+    document.getElementById("holidayDays").innerText = "-- 天";
+    return;
+  }
+
+  const days = Math.ceil(upcoming.diff / (1000 * 60 * 60 * 24));
+  document.getElementById("holidayName").innerText = "距离 " + upcoming.name;
+  document.getElementById("holidayDays").innerText = days + " 天";
+}
+
+updateHoliday();
+setInterval(updateHoliday, 60 * 1000);
 </script>
 </body>
 </html>
