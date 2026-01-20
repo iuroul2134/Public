@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>天气 + 节日倒计时</title>
+<title>天气 + 节假日倒计时</title>
 
 <style>
 body {
@@ -22,7 +22,7 @@ body {
   text-align: center;
 }
 
-/* 黑字 + 白描边（直播抗背景） */
+/* 黑字 + 白描边 */
 .stroke {
   color: #000;
   text-shadow:
@@ -32,15 +32,8 @@ body {
      1px  1px 0 #fff;
 }
 
-.city {
-  font-size: 18px;
-  margin-bottom: 6px;
-}
-
-.temp {
-  font-size: 48px;
-  font-weight: 600;
-}
+.city { font-size: 18px; margin-bottom: 6px; }
+.temp { font-size: 48px; font-weight: 600; }
 
 .divider {
   width: 80%;
@@ -49,14 +42,8 @@ body {
   margin: 12px 0;
 }
 
-.holiday {
-  font-size: 16px;
-}
-
-.days {
-  font-size: 32px;
-  font-weight: 600;
-}
+.holiday { font-size: 16px; }
+.days { font-size: 32px; font-weight: 600; }
 </style>
 </head>
 
@@ -67,12 +54,12 @@ body {
 
   <div class="divider"></div>
 
-  <div id="holidayName" class="holiday stroke">距离 节日</div>
-  <div id="holidayDays" class="days stroke">-- 天</div>
+  <div id="holidayName" class="holiday stroke">节假日</div>
+  <div id="holidayDays" class="days stroke">--</div>
 </div>
 
 <script>
-// ================= 城市列表（1 + 2 线） =================
+// ================= 城市列表（完整一线 + 二线） =================
 const cities = [
   { name: "北京", lat: 39.9042, lon: 116.4074 },
   { name: "上海", lat: 31.2304, lon: 121.4737 },
@@ -112,12 +99,11 @@ const cities = [
 ];
 
 let cityIndex = 0;
-
 function loadWeather() {
-  const city = cities[cityIndex];
-  document.getElementById("city").innerText = city.name;
+  const c = cities[cityIndex];
+  document.getElementById("city").innerText = c.name;
 
-  fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true`)
+  fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current_weather=true`)
     .then(r => r.json())
     .then(d => {
       document.getElementById("temp").innerText =
@@ -129,33 +115,57 @@ function loadWeather() {
 
   cityIndex = (cityIndex + 1) % cities.length;
 }
-
 loadWeather();
 setInterval(loadWeather, 8000);
 
-// ================= 节日自动切换 =================
+// ================= 30天内节假日自动轮播 =================
 const holidays = [
-  { name: "春节", date: new Date("2026-02-17") },
-  { name: "情人节", date: new Date("2026-02-14") },
-  { name: "元宵节", date: new Date("2026-03-03") }
+  { name: "春节", date: "2026-02-17" },
+  { name: "情人节", date: "2026-02-14" },
+  { name: "元宵节", date: "2026-03-03" },
+  { name: "清明节", date: "2026-04-05" },
+  { name: "劳动节", date: "2026-05-01" },
+  { name: "端午节", date: "2026-06-19" },
+  { name: "中秋节", date: "2026-09-25" },
+  { name: "国庆节", date: "2026-10-01" }
 ];
 
-function updateHoliday() {
+let holidayPool = [];
+let holidayIndex = 0;
+
+function refreshHolidayPool() {
   const now = new Date();
-  const next = holidays
-    .map(h => ({ ...h, diff: h.date - now }))
-    .filter(h => h.diff > 0)
-    .sort((a, b) => a.diff - b.diff)[0];
+  const limit = new Date(now.getTime() + 30 * 86400000);
 
-  if (!next) return;
+  holidayPool = holidays
+    .map(h => ({
+      name: h.name,
+      date: new Date(h.date),
+      days: Math.ceil((new Date(h.date) - now) / 86400000)
+    }))
+    .filter(h => h.days >= 0 && h.date <= limit);
 
-  document.getElementById("holidayName").innerText = "距离 " + next.name;
-  document.getElementById("holidayDays").innerText =
-    Math.ceil(next.diff / 86400000) + " 天";
+  holidayIndex = 0;
 }
 
-updateHoliday();
-setInterval(updateHoliday, 60000);
+function showHoliday() {
+  if (holidayPool.length === 0) {
+    document.getElementById("holidayName").innerText = "未来30天";
+    document.getElementById("holidayDays").innerText = "无节假日";
+    return;
+  }
+
+  const h = holidayPool[holidayIndex];
+  document.getElementById("holidayName").innerText = "距离 " + h.name;
+  document.getElementById("holidayDays").innerText = h.days + " 天";
+
+  holidayIndex = (holidayIndex + 1) % holidayPool.length;
+}
+
+refreshHolidayPool();
+showHoliday();
+setInterval(refreshHolidayPool, 60 * 60 * 1000);
+setInterval(showHoliday, 10000);
 </script>
 </body>
 </html>
